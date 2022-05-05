@@ -1,0 +1,10 @@
+# main conda env with snakemake
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - mamba=0.19.1
+  - pandas=1.3.5
+  - python=3.10.0
+  - snakemake=6.12.3 # latest version from 2021.12.16

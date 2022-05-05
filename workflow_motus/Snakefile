@@ -1,0 +1,141 @@
+##################################################
+# MODULES
+
+import os
+import re
+import pandas
+from snakemake.utils import validate
+
+##################################################
+# CONFIG
+
+# Config validation
+validate(config, srcdir("../schema/config.motus.yaml"))
+
+# Samples
+SAMPLES = pandas.read_csv(config["samples"], sep="\t", header=0, index_col="SampleID").replace({pandas.NA: None})
+
+# Omes to use
+OMES = config["mOTUs"]["omes"].split(',')
+
+# Sample table validation
+validate(SAMPLES, srcdir("../schema/samples.yaml"))
+
+# Paths
+SRC_DIR = srcdir("scripts")
+ENV_DIR = srcdir("envs")
+MOD_DIR = srcdir("../submodules")
+
+# Default executable for snakemake
+shell.executable("bash")
+
+
+##################################################
+# FUNCTIONS
+
+def get_sample_reads_fw(wildcards):
+    wc_data = wildcards.sid_ome.split('/')
+    sample_id = wc_data[0]
+    ome_reads = f'{wc_data[1].upper()}_R1'
+    return SAMPLES.loc[sample_id, ome_reads]
+
+def get_sample_reads_rv(wildcards):
+    wc_data = wildcards.sid_ome.split('/')
+    sample_id = wc_data[0]
+    ome_reads = f'{wc_data[1].upper()}_R2'
+    return SAMPLES.loc[sample_id, ome_reads]
+
+def get_sample_reads_se(wildcards):
+    wc_data = wildcards.sid_ome.split('/')
+    sample_id = wc_data[0]
+    ome_reads = f'{wc_data[1].upper()}_SE'
+    return SAMPLES.loc[sample_id, ome_reads]
+
+def get_ome_r_types(ome):
+    r_types = ['R1', 'R2']  # , 'SE'
+    return [f'{ome.upper()}_{r_type}' for r_type in r_types]
+
+def get_sample_ome_combos(samples, omes):
+    return [(sample, ome) for sample in samples for ome in omes]
+
+##################################################
+
+# Select only samples which have fw and rv reads in sample table per ome
+SAMPLE_OME_AVAIL = [f'{sample}/{ome}' for sample, ome in get_sample_ome_combos(SAMPLES.index, OMES)
+                    if all([SAMPLES.loc[sample, ome_reads] for ome_reads in get_ome_r_types(ome)])]
+
+# RULES
+localrules: all
+rule all:
+    input:
+        expand(os.path.join("motus", "{sid_ome}", "taxonomy_profile.txt"), sid_ome=SAMPLE_OME_AVAIL),  # , "{ome}"
+        expand(os.path.join("motus", "taxonomy_profile_{ome}.txt"), ome=OMES)
+
+rule motus_profile:
+    input:
+        reads_fw=get_sample_reads_fw,
+        reads_rv=get_sample_reads_rv
+    output:
+        os.path.join("motus", "{sid_ome}", "taxonomy_profile.txt")  # , "{ome}"
+    log:
+        os.path.join("motus", "{sid_ome}", "profile.log")  # , "{ome}"
+    benchmark:
+        os.path.join("motus", "{sid_ome}", "benchmark.tsv")  # , "{ome}"
+    wildcard_constraints:
+        sid_ome="|".join(SAMPLE_OME_AVAIL)
+    params:
+        arguments=config["mOTUs"]["arguments"],
+        minimum_alignment_length=config["mOTUs"]["minimum_alignment_length"],
+        type_of_read_counts=config["mOTUs"]["type_of_read_counts"],
+        marker_genes_cutoff=config["mOTUs"]["marker_genes_cutoff"],
+        sample_id=lambda wc: wc.get("sid_ome").split('/')[0],
+        ome=lambda wc: wc.get("sid_ome").split('/')[1],
+        reads_se=lambda wc : '' if os.stat(get_sample_reads_se(wc)).st_size == 0 else f'-s {get_sample_reads_se(wc)}'
+    threads:
+        8
+    resources:
+        # mem_mb=4000
+    conda:
+        os.path.join(ENV_DIR, "motus.yaml")
+    message:
+        "mOTUs: Creating tax profile for {params.sample_id} {params.ome}."
+    shell:
+        """
+        motus profile -n {params.sample_id} \
+                      -f {input.reads_fw} \
+                      -r {input.reads_rv} \
+                      {params.reads_se} \
+                      -t {threads} \
+                      -l {params.minimum_alignment_length} \
+                      -y {params.type_of_read_counts} \
+                      -g {params.marker_genes_cutoff} \
+                      {params.arguments} > {output} 2> {log}
+        """
+
+rule motus_profile_merge:
+    input:
+        lambda wildcards: expand(os.path.join("motus", "{sid}", "{ome}", "taxonomy_profile.txt"), zip,
+                                 sid=[sid_ome.split('/')[0] for sid_ome in SAMPLE_OME_AVAIL if sid_ome.split('/')[1] == wildcards.ome],
+                                 ome=[sid_ome.split('/')[1] for sid_ome in SAMPLE_OME_AVAIL if sid_ome.split('/')[1] == wildcards.ome])
+    output:
+        os.path.join("motus", "taxonomy_profile_{ome}.txt")
+    log:
+        os.path.join("motus", "merge_profiles_{ome}.log")
+    benchmark:
+        os.path.join("motus", "merge_profiles_benchmark_{ome}.tsv")
+    wildcard_constraints:
+        ome="|".join(OMES)
+    params:
+        profiles=lambda wildcards, input: ','.join(input)
+    threads:
+        4
+    resources:
+        # mem_mb=4000
+    conda:
+        os.path.join(ENV_DIR, "motus.yaml")
+    message:
+        "mOTUs: Merging all tax profiles for {wildcards.ome}."
+    shell:
+        """
+        motus merge -i {params.profiles} > {output} 2> {log}
+        """

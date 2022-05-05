@@ -1,0 +1,39 @@
+# Sample table (absolute path if used with a snakemake profile)
+samples: "/mnt/irisgpfs/users/ohickl/local_tools/motus3/config/mibipa_samples.tsv"
+
+# mOTUSs3
+# https://github.com/motu-tool/mOTUs
+
+mOTUs:
+  # Add choices from below space-separated (e.g. "-A -c"):
+  # Print the result as counts: -c
+  # Change the taxonomy level: -k
+  # Add the NCBI taxonomy id: -p
+  # Print the full rank taxonomy: -q
+  # CAMI (BioBoxes) format: -Cq
+  # BIOM format: -B
+  # Print full species name: -u
+  # Print only ref_mOTUs: -e
+  # Print all taxonomy levels together: -A
+  arguments: "-A -c"
+  # Omes to profile taxonomy from.
+  omes: 'mg,mt'
+  # From mOTUs wiki:
+  # Minimum length of the alignment between the read and the marker genes (different from read length).
+  # Default value is 75, higher values will produce less false positives (less reads pass the filter) while lower values
+  # will recruit more reads, allowing to detect low abundant bugs at the cost of more false positives.
+  # Note that this parameter has to be tuned with the average read length, we suggest to choose a value between 45 and 100.
+  minimum_alignment_length: 75
+  # From mOTUs wiki:
+  # There are three possible values: base.coverage, insert.raw_counts, insert.scaled_counts (default).
+  # The values with insert.* counts the number of inserts (reads) that map to the gene, where raw_counts measure the
+  # absolute number of reads and scaled_counts weights the read counts with the gene length. base.coverage measure the
+  # average base coverage of the gene.
+  type_of_read_counts: "insert.scaled_counts"
+  # From mOTUs wiki:
+  # Every mOTU is composed of 10 marker genes and the read count of the mOTU is calculated as the median of the read
+  # counts of the genes that are different from zero. The parameter -g defines the minimum number of genes that have to
+  # be different from zero. The default value is 3 and possible values are between 1 and 10. With -g 1 the detection of
+  # one gene is enough to consider the mOTU as present in the sample (detecting low abundance species but also false
+  # positives). On the other hand, with -g 6 only the mOTUs with 6 detected genes are counted, reducing the false positives.
+  marker_genes_cutoff: 3

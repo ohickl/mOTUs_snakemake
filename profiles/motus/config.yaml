@@ -1,0 +1,47 @@
+# NOTE: change all parameters with the tag "USER_INPUT" !!!
+
+# main workflow snakemake file
+snakefile: "workflow_motus/Snakefile"
+
+# total number of cores and jobs
+cores: 400
+jobs: 50
+# for local rules: use at most N cores of the host machine in parallel
+local-cores: 1
+
+# working/output directory
+directory: "/mnt/lscratch/users/ohickl/mibipa"
+
+# config file(s)
+configfile:
+  - "config/config.motus.yaml" # USER_INPUT
+
+# resources
+default-resources:
+  # tmp directory
+  - tmpdir="/mnt/lscratch/users/ohickl/binning/mibipa/motus/tmp" # USER_INPUT
+
+# go on with independent jobs if a job fails
+keep-going: True
+# re-run all jobs the output of which is recognized as incomplete
+rerun-incomplete: True
+# print the reason for each executed rule
+reason: True
+# print out the shell commands that will be executed
+printshellcmds: True
+# conda
+use-conda: True
+conda-prefix: "/mnt/irisgpfs/users/ohickl/local_tools/motus3/conda" # USER_INPUT
+# wait given seconds if an output file of a job is not present after the job finished
+latency-wait: 60
+
+# number of times to restart failing jobs
+restart-times: 0
+# execute snakemake rules with the given submit command
+cluster: "sbatch -p {cluster.partition} -q {cluster.qos} -N 1 -n 1 -c {threads} -t {cluster.time} -J {cluster.job-name}"
+# slurm config (ABSOLUTE PATH !!!)
+cluster-config: "/mnt/irisgpfs/users/ohickl/local_tools/motus3//profiles/motus/slurm.yaml" # USER_INPUT
+# max. number of cluster/drmaa jobs per second
+max-jobs-per-second: 1
+# max. number of job status checks per second
+max-status-checks-per-second: 10

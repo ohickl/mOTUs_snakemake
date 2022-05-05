@@ -1,0 +1,46 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+
+title: sample table
+
+properties:
+  SampleID:
+    type: string
+    pattern: "^[A-Za-z0-9\\._-]+$"
+    description: sample ID
+  MG_R1:
+    type: [string, null]
+    pattern: "^/.*\\.(fq|fastq)$" # TODO
+    description: absolute path to metaG R1 FASTQ file
+  MG_R2:
+    type: [string, null]
+    pattern: "^/.*\\.(fq|fastq)$" # TODO
+    description: absolute path to metaG R2 FASTQ file
+  MG_SE:
+    type: [ string, null ]
+    pattern: "^/.*\\.(fq|fastq)$" # TODO
+    description: absolute path to metaG SE FASTQ file
+  MT_R1:
+    type: [string, null]
+    pattern: "^/.*\\.(fq|fastq)$" # TODO
+    description: absolute path to metaG R1 FASTQ file
+  MT_R2:
+    type: [string, null]
+    pattern: "^/.*\\.(fq|fastq)$" # TODO
+    description: absolute path to metaG R2 FASTQ file
+  MT_SE:
+    type: [ string, null ]
+    pattern: "^/.*\\.(fq|fastq)$" # TODO
+    description: absolute path to metaG SE FASTQ file
+#  Contigs:
+#    type: string
+#    pattern: "^/.*\\.(fasta|fa|fna)$"
+#    description:  absolute path to the contigs FASTA file
+
+#required:
+#  # - SampleID # is used as index when reading in
+#  - MG_R1
+#  - MG_R2
+#  - MG_SE
+#  - MT_R1
+#  - MT_R2
+#  - MT_SE

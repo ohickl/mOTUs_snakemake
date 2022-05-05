@@ -1,0 +1,11 @@
+__default__:
+  time: "0-00:30:00"
+  partition: "batch"
+  qos: "normal"
+  job-name: "mOTUs.{rule}"
+
+motus_profile:
+  time: "0-02:00:00"
+
+motus_profile_merge:
+  time: "0-00:10:00"

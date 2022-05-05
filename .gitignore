@@ -1,0 +1,6 @@
+conda/
+.*
+*stderr
+*stdout
+config/mibipa*
+!.gitignore
