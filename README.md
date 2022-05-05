@@ -1,6 +1,6 @@
 # About
 
-Benchmark of plasmid prediction tools.
+Snakemake workflow to run mOTUs profiling on multiple samples.
 
 # Setup
 
